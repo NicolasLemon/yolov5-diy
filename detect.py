@@ -81,7 +81,18 @@ def runInterface(model, save_dir, device, half, conf_thres, iou_thres, classes, 
     return pred, dt, seen, img
 
 
+def alt_tab():
+    """ 切屏操作 """
+    keyboard.press(Key.alt)
+    keyboard.press(Key.tab)
+    keyboard.release(Key.tab)
+    keyboard.release(Key.alt)
+
+
 if __name__ == "__main__":
+    # 判断是否需要切屏操作
+    key_input = input('是否需要切屏？(y/n)：')
+    is_need_alt_tab = (True if key_input.lower() == 'y' else False)
     weights = ROOT / 'yolov5s.pt'  # 模型位置
 
     # 警报的参数
@@ -167,20 +178,19 @@ if __name__ == "__main__":
                     # 人是names[0]
                     if c == 0 and n > 0:
                         danger = True
-                    #     if dangerState == 0:
-                    #         # 切屏
-                    #         print("切屏aaa")
-                    #         keyboard.press(Key.alt)
-                    #         keyboard.press(Key.tab)
-                    #         keyboard.release(Key.tab)
-                    #         keyboard.release(Key.alt)
-                    #         dangerState = 1
-                    # elif c == 0 and n == 0:
-                    #     print(dangerState)
-                    #     if dangerState == 1:
-                    #         # 切回来
-                    #         print("切回来vvv")
-                    #         dangerState = 0
+                        if dangerState == 0:
+                            if is_need_alt_tab:
+                                # 切屏
+                                alt_tab()
+                                # print("切屏")
+                            dangerState = 1
+                    elif c == 0 and n == 0:
+                        print(dangerState)
+                        if dangerState == 1:
+                            # 切回来
+                            if is_need_alt_tab:
+                                print("切回来vvv")
+                            dangerState = 0
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
@@ -196,21 +206,24 @@ if __name__ == "__main__":
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+            # 原逻辑有点问题，不太适用，因为背景里可能有其他物体
             # else:
             #     if dangerState == 1:
             #         # 切回来
+            #         alt_tab()
             #         print("切回来ss")
-            #         keyboard.press(Key.alt)
-            #         keyboard.press(Key.tab)
-            #         keyboard.release(Key.tab)
-            #         keyboard.release(Key.alt)
             #         dangerState = 0
+
             # Stream results
             im0 = annotator.result()
             if danger:
                 winsound.Beep(freq, duration)
                 cv2.putText(im0, "warning!", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 6)
             else:
+                if dangerState == 1 and is_need_alt_tab:
+                    alt_tab()
+                    # print('切回来')
+                    dangerState = 0
                 cv2.putText(im0, "safe", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 6)
             if view_img:
                 cv2.imshow(str(p), im0)
