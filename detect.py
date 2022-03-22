@@ -217,7 +217,8 @@ if __name__ == "__main__":
             # Stream results
             im0 = annotator.result()
             if danger:
-                winsound.Beep(freq, duration)
+                if not is_need_alt_tab:
+                    winsound.Beep(freq, duration)
                 cv2.putText(im0, "warning!", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 6)
             else:
                 if dangerState == 1 and is_need_alt_tab:
