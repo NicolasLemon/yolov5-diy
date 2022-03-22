@@ -18,7 +18,7 @@ from pynput.keyboard import Key, Controller
 keyboard = Controller()
 FILE = Path(__file__).resolve()
 # ROOT = FILE.parents[0]  # YOLOv5 root directory
-ROOT = r'C:\Users\NicolasLemon\Desktop\Python.py\yoloDIY'  # YOLOv5 root directory
+ROOT = r'C:\Users\NicolasLemon\Desktop\Python.py\yolov5-diy'  # YOLOv5 root directory
 
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
