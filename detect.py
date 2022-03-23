@@ -7,11 +7,12 @@ Usage:
 """
 import os
 import sys
-from pathlib import Path
-
-from cv2 import cv2
-import winsound
+import time
 import torch
+import winsound
+from cv2 import cv2
+from pathlib import Path
+import multiprocessing as mp
 import torch.backends.cudnn as cudnn
 from pynput.keyboard import Key, Controller
 
@@ -89,12 +90,20 @@ def alt_tab():
     keyboard.release(Key.alt)
 
 
+def delay_alt_tab(delay):
+    # 延迟切回去
+    time.sleep(delay)
+    alt_tab()
+
+
 if __name__ == "__main__":
     # 判断是否需要切屏操作
     key_input = input('是否需要切屏？(y/n)：')
     is_need_alt_tab = (True if key_input.lower() == 'y' else False)
     weights = ROOT / 'yolov5s.pt'  # 模型位置
 
+    alt_tab_delay = 3
+    process_alt_tab = mp.Process(target=delay_alt_tab, args=(alt_tab_delay,))
     # 警报的参数
     duration = 500  # millisecond
     freq = 440  # Hz
@@ -178,11 +187,14 @@ if __name__ == "__main__":
                     # 人是names[0]
                     if c == 0 and n > 0:
                         danger = True
-                        if dangerState == 0:
-                            if is_need_alt_tab:
+                        if dangerState == 0 and is_need_alt_tab:
+                            if process_alt_tab.is_alive():
+                                # 不切屏并且销毁子进程
+                                process_alt_tab.terminate()
+                                process_alt_tab.join()
+                            else:
                                 # 切屏
                                 alt_tab()
-                                # print("切屏")
                             dangerState = 1
                     elif c == 0 and n == 0:
                         print(dangerState)
@@ -206,13 +218,6 @@ if __name__ == "__main__":
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-            # 原逻辑有点问题，不太适用，因为背景里可能有其他物体
-            # else:
-            #     if dangerState == 1:
-            #         # 切回来
-            #         alt_tab()
-            #         print("切回来ss")
-            #         dangerState = 0
 
             # Stream results
             im0 = annotator.result()
@@ -221,9 +226,10 @@ if __name__ == "__main__":
                     winsound.Beep(freq, duration)
                 cv2.putText(im0, "warning!", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 6)
             else:
-                if dangerState == 1 and is_need_alt_tab:
-                    alt_tab()
-                    # print('切回来')
+                if dangerState == 1 and is_need_alt_tab and not process_alt_tab.is_alive():
+                    # 创建子进程，延迟切回来
+                    process_alt_tab = mp.Process(target=delay_alt_tab, args=(alt_tab_delay,))
+                    process_alt_tab.start()
                     dangerState = 0
                 cv2.putText(im0, "safe", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 6)
             if view_img:
