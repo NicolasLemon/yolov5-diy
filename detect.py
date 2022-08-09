@@ -10,6 +10,7 @@ import sys
 import time
 import torch
 import winsound
+import pygame
 from cv2 import cv2
 from pathlib import Path
 import multiprocessing as mp
@@ -20,6 +21,11 @@ keyboard = Controller()
 FILE = Path(__file__).resolve()
 # ROOT = FILE.parents[0]  # YOLOv5 root directory
 ROOT = r'C:\Users\NicolasLemon\Desktop\Python.py\yolov5-diy'  # YOLOv5 root directory
+# ROOT = r'D:\Daturm\ProjectDatum\Python.py\yolov5-diy'  # YOLOv5 root directory
+
+pygame.mixer.init()
+# 载入一个音乐文件用于播放
+music = pygame.mixer.music.load(r'alarm.mp3')
 
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
@@ -223,7 +229,10 @@ if __name__ == "__main__":
             im0 = annotator.result()
             if danger:
                 if not is_need_alt_tab:
-                    winsound.Beep(freq, duration)
+                    # winsound.Beep(freq, duration)
+                    # 开始播放音乐流
+                    if pygame.mixer.music.get_busy() == False:
+                        pygame.mixer.music.play()
                 cv2.putText(im0, "warning!", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 6)
             else:
                 if dangerState == 1 and is_need_alt_tab and not process_alt_tab.is_alive():
@@ -231,6 +240,9 @@ if __name__ == "__main__":
                     process_alt_tab = mp.Process(target=delay_alt_tab, args=(alt_tab_delay,))
                     process_alt_tab.start()
                     dangerState = 0
+                # 暂停播放音乐流
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.stop()
                 cv2.putText(im0, "safe", (200, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 6)
             if view_img:
                 cv2.imshow(str(p), im0)
