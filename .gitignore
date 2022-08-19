@@ -1,1 +1,14 @@
 runs/
+__pycache__/
+
+.DS_Store
+**/*.log
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.local

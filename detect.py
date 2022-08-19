@@ -9,7 +9,8 @@ import os
 import sys
 import time
 import torch
-import winsound
+
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "什么是快乐星球"
 import pygame
 from cv2 import cv2
 from pathlib import Path
@@ -38,6 +39,11 @@ from utils.general import apply_classifier, check_img_size, check_imshow, check_
     strip_optimizer, xyxy2xywh
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
+
+from utils.switch_foreground_window import WindowObject
+
+window_object = WindowObject()
+this_window_back = {}
 
 
 def loadModel(weights, half, device):
@@ -88,18 +94,19 @@ def runInterface(model, save_dir, device, half, conf_thres, iou_thres, classes, 
     return pred, dt, seen, img
 
 
-def alt_tab():
+def alt_tab(top_view):
     """ 切屏操作 """
-    keyboard.press(Key.alt)
-    keyboard.press(Key.tab)
-    keyboard.release(Key.tab)
-    keyboard.release(Key.alt)
+    print('哇哈哈哈切屏来咯')
+    window_object.switch_foreground_window(top_view)
 
 
-def delay_alt_tab(delay):
+def delay_alt_tab(delay, top_view):
     # 延迟切回去
-    time.sleep(delay)
-    alt_tab()
+    pass
+    # if not top_view:
+    #     return
+    # time.sleep(delay)
+    # alt_tab(top_view)
 
 
 if __name__ == "__main__":
@@ -152,6 +159,7 @@ if __name__ == "__main__":
     save_img = False
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
+
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
@@ -200,7 +208,12 @@ if __name__ == "__main__":
                                 process_alt_tab.join()
                             else:
                                 # 切屏
-                                alt_tab()
+                                this_foreground_window = window_object.get_foreground_window()
+                                if this_foreground_window != window_object.window_allow:
+                                    alt_tab(window_object.window_allow)
+                                    this_window_back = this_foreground_window
+                                else:
+                                    this_window_back = {}
                             dangerState = 1
                     elif c == 0 and n == 0:
                         print(dangerState)
@@ -229,7 +242,6 @@ if __name__ == "__main__":
             im0 = annotator.result()
             if danger:
                 if not is_need_alt_tab:
-                    # winsound.Beep(freq, duration)
                     # 开始播放音乐流
                     if pygame.mixer.music.get_busy() == False:
                         pygame.mixer.music.play()
@@ -237,7 +249,8 @@ if __name__ == "__main__":
             else:
                 if dangerState == 1 and is_need_alt_tab and not process_alt_tab.is_alive():
                     # 创建子进程，延迟切回来
-                    process_alt_tab = mp.Process(target=delay_alt_tab, args=(alt_tab_delay,))
+                    process_alt_tab = mp.Process(target=delay_alt_tab,
+                                                 args=(alt_tab_delay, this_window_back,))
                     process_alt_tab.start()
                     dangerState = 0
                 # 暂停播放音乐流
