@@ -96,8 +96,13 @@ def runInterface(model, save_dir, device, half, conf_thres, iou_thres, classes, 
 
 def alt_tab(top_view):
     """ 切屏操作 """
-    print('哇哈哈哈切屏来咯')
-    window_object.switch_foreground_window(top_view)
+    try:
+        print('啊哈哈哈哈，切屏来咯 - %s' % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        global window_object
+        window_object.switch_foreground_window(top_view)
+    except Exception:
+        window_object = WindowObject()
+        alt_tab(window_object.window_allow)
 
 
 def delay_alt_tab(delay, top_view):
@@ -186,7 +191,8 @@ if __name__ == "__main__":
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # img.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+            txt_path = str(save_dir / 'labels' / p.stem) + (
+                '' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
